@@ -4,8 +4,8 @@ import numpy as np
 from sys import argv
 from math import trunc
 
-CROP_NUM = 8            # divide a imgem em CROP_NUM x CROP_NUM areas
-BLUE_THRESHOLD = 90    # valor minimo do hue para ser considerado nao verde
+CROP_NUM = 10            # divide a imgem em CROP_NUM x CROP_NUM areas
+BLUE_THRESHOLD = 85    # valor minimo do hue para ser considerado nao verde
 
 def find_green(img: np.ndarray):
     """Retorna o menor e o maior valor de verde na imagem"""
@@ -23,13 +23,8 @@ def find_green(img: np.ndarray):
             curr_avgr = np.average(crop, axis = (0,1))
 
             # remove areas que nao sao verdes
-            if curr_avgr[0] > BLUE_THRESHOLD:
-                avgrs_blue.append([trunc(x) for x in curr_avgr])
-            else:
+            if curr_avgr[0] < BLUE_THRESHOLD:
                 avgrs.append([trunc(x) for x in curr_avgr])
-
-    blue_thresh = min(avgrs_blue, key=lambda x: x[0])
-    avgrs = [x for x in avgrs if x[0] < blue_thresh[0]]
 
     return np.array(min(avgrs, key=lambda x: x[0])), np.array(max(avgrs, key=lambda x: x[0]))
 
