@@ -4,29 +4,34 @@ import numpy as np
 from sys import argv
 from math import trunc
 
-CROP_NUM = 10            # divide a imgem em CROP_NUM x CROP_NUM areas
-BLUE_THRESHOLD = 85    # valor minimo do hue para ser considerado nao verde
+# divide a imgem em CROP_NUM x CROP_NUM areas
+CROP_NUM = 8            
 
-def find_green(img: np.ndarray):
+# intervalo do verde do hue (para a maioria das imagens)
+GREEN_UPPER = 90    
+GREEN_LOWER = 30
+
+def get_bounds(img: np.ndarray):
     """Retorna o menor e o maior valor de verde na imagem"""
 
     h, w, _ = img.shape
     crop_h = h // CROP_NUM
     crop_w = w // CROP_NUM
 
-    avgrs = []
-    avgrs_blue = []
+    opt_lower = np.array([180, 255, 255], dtype=np.uint8)
+    opt_upper = np.array([0, 0, 0], dtype=np.uint8)
     for i in range(CROP_NUM):
         for j in range(CROP_NUM):
             # encontra a media de pixels da area
             crop = img[i * crop_h: (i + 1) * crop_h, j * crop_w: (j + 1) * crop_w]
-            curr_avgr = np.average(crop, axis = (0,1))
+            curr_avgr = [trunc(x) for x in np.average(crop, axis = (0,1))]
 
-            # remove areas que nao sao verdes
-            if curr_avgr[0] < BLUE_THRESHOLD:
-                avgrs.append([trunc(x) for x in curr_avgr])
-
-    return np.array(min(avgrs, key=lambda x: x[0])), np.array(max(avgrs, key=lambda x: x[0]))
+            # se a media estiver no intervalo do verde, atualiza os limites
+            if GREEN_LOWER < curr_avgr[0] < GREEN_UPPER:
+                opt_lower = np.minimum(opt_lower, curr_avgr)
+                opt_upper = np.maximum(opt_upper, curr_avgr)
+            
+    return opt_lower, opt_upper
 
 def main():
     input_filename = argv[1]
@@ -36,11 +41,10 @@ def main():
     input = cv2.imread(input_filename, cv2.COLOR_BGR2RGB)
     input_hsv = cv2.cvtColor(input, cv2.COLOR_BGR2HSV)
 
-    light_green, dark_green = find_green(input_hsv)
+    light_green, dark_green = get_bounds(input_hsv)
 
     # upper e lower bounds para o filtro
     # tive melhores resultados usando somente o hue
-    # menos para a imagem 6
     light_green = np.array([light_green[0], 0, 0])
     dark_green = np.array([dark_green[0], 255, 255])
 
@@ -50,10 +54,6 @@ def main():
 
     # converte de volta para BGR e salva 
     result = cv2.cvtColor(result, cv2.COLOR_HSV2BGR)
-
-    cv2.imshow("result", result)
-    cv2.waitKey(0)
-
     cv2.imwrite(output_filename, result)
 
 if __name__ == "__main__":
