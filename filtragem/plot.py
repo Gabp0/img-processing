@@ -1,11 +1,12 @@
+# GRR20203895 Gabriel de Oliveira Pontarolo
 import pandas as pd
 from matplotlib import pyplot as plt
-from sys import argv
+from sys import argv, exit
 import numpy as np
 
 def main():
-    if len(argv) != 4:
-        print(f"Uso: {argv[0]} <csv_input> <img_output> <plot_title>")
+    if len(argv) != 5:
+        print(f"Uso: {argv[0]} <csv_input> <img_output> <plot_title> <plot_spacing>")
         exit(1)
 
     # le o csv em um dataframe
@@ -14,7 +15,7 @@ def main():
 
     # plota o grafico
     df.plot()
-    plt.xticks(np.arange(min(df.index), max(df.index), 2))
+    plt.xticks(np.arange(min(df.index), max(df.index), int(argv[4])))
     plt.title(argv[3])
 
     # salva a img de saida
