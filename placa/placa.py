@@ -1,10 +1,11 @@
+# GRR20203895 Gabriel de Oliveira Pontarolo
 import cv2
 import numpy as np
 from sys import argv
 from matplotlib import pyplot as plt
 
 def filter_pipeline(img, functions:list[tuple]):
-    """Aplica o pipeline de funcoes em *img*"""
+    """Aplica o pipeline de fitlros em *img*"""
 
     result = img
     for function in functions:
@@ -38,11 +39,22 @@ def frequency_filter(img, maskSize):
     
     return img_back.astype(np.uint8)
 
-def glahe_filter(img, clipLimit, tileGridSize):
+def glahe_filter(img, clipLimit):
     """Filtro de GLAHE para melhoria do contraste e bordas"""
 
     glahe = cv2.createCLAHE(clipLimit=clipLimit)
     return glahe.apply(img)
+
+def unsharp_mask(img):
+    """Unsharp masking para realce de bordas
+    https://en.wikipedia.org/wiki/Unsharp_masking
+    https://stackoverflow.com/questions/32454613/python-unsharp-mask"""
+
+    gaussian = cv2.GaussianBlur(img, (0, 0), 2.0)
+    unsharp_image = cv2.addWeighted(img, 2.0, gaussian, -1.0, 0)
+
+    return unsharp_image
+
     
 def main():
     if len(argv) != 3:
@@ -50,34 +62,19 @@ def main():
         exit(1)
 
     input_img = cv2.imread(argv[1], cv2.IMREAD_GRAYSCALE)
-    h,w = input_img.shape
-    output_file = argv[2]
+    output_filename = argv[2]
 
     result = filter_pipeline(
         input_img,
         [
             (frequency_filter, {"maskSize" : 3}),
             (cv2.medianBlur, {"ksize" : 3}),
-            #(cv2.GaussianBlur, {"ksize": (5,5), "sigmaX": 0}),
-            #(cv2.bilateralFilter, {"d" : 17, "sigmaColor" : 0, "sigmaSpace" : 0}),
-            (glahe_filter, {"clipLimit" : 9, "tileGridSize" : (3,3)}),
+            (glahe_filter, {"clipLimit" : 9}),
+            (unsharp_mask, {}),
         ]
     )
 
-    # result = frequency_filter(result)
-    # result = cv2.medianBlur(result, 3)
-    # result = glahe.apply(result)
-    #result = cv2.bilateralFilter(result, 17, 0, 0)
-    #result = cv2.Laplacian(result, cv2.CV_8U, ksize=7)
-    #result = cv2.inRange(result, 34, 255)
-    #result = cv2.bitwise_and(input_img, input_img, mask=mask)
-    #result = cv2.equalizeHist(result)
-
-    show = np.concatenate((input_img, result), axis=1)
-    cv2.imshow("out", show)
-    cv2.waitKey(0)
-    cv2.imwrite(output_file, result)
-
+    cv2.imwrite(output_filename, result)
 
 if __name__ == "__main__":
     main()
