@@ -64,6 +64,7 @@ def main():
     input_img = cv2.imread(argv[1], cv2.IMREAD_GRAYSCALE)
     output_filename = argv[2]
 
+    # aplica os filtros para melhoria da visualizacao da placa
     result = filter_pipeline(
         input_img,
         [
@@ -72,7 +73,12 @@ def main():
             (glahe_filter, {"clipLimit" : 9}),
             (unsharp_mask, {}),
         ]
-    )
+    )   
+
+    # tentativa de fazer a segmentacao da placa
+    ret, mask = cv2.threshold(result, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    mask = cv2.medianBlur(mask, 3)
+    result = cv2.bitwise_and(result, result, mask=mask)
 
     cv2.imwrite(output_filename, result)
 
