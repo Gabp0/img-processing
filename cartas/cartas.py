@@ -1,10 +1,11 @@
+# Gabriel de Oliveira Pontarolo GRR20203895
 import cv2
 import numpy as np
 from sys import argv
 from os import listdir
 from scipy.signal import find_peaks
 
-DIR_NAME = "vl" # MUDAR PARA "." ANTES DE ENTREGAR
+DIR_NAME = "."
 ACCEPTED_FORMATS = ["png", "jpg"]
 RESIZE_FACTOR = 4 
 DISTANCE = 20.5
@@ -73,6 +74,7 @@ def count_lines(img_paths):
 
 def count_words(img_paths):
     for img_path in img_paths:
+        img_name = img_path.split("/")[-1]
 
         # pre processamento
         img = cv2.imread(img_path)
@@ -82,15 +84,23 @@ def count_words(img_paths):
         _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         thresh = cv2.bitwise_not(thresh)
 
-        # junta as letras das palavras
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        mask = cv2.dilate(thresh, kernel, iterations=1)
+        # tenta aproximar as letras 
+        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+        mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+        hor_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 1))
+        mask = cv2.dilate(mask, hor_kernel, iterations=1)
 
-        
+        # conta os contornos
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            size = cv2.contourArea(cnt)
+            if size > 30:
+                x, y, w, h = cv2.boundingRect(cnt)
+                cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 1)
 
-        cv2.imshow("mask", mask)
-        cv2.waitKey(0)
-       
+        print(f"{img_name.split('_')[0]} {len(contours)} palavras encontradas")
+
+        cv2.imwrite(f"output_{img_name}", img)
 
 def main():
     if (len(argv) < 2):
