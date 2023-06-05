@@ -5,7 +5,7 @@ from sys import argv
 from os import listdir
 from scipy.signal import find_peaks
 
-DIR_NAME = "vl"
+DIR_NAME = "."
 ACCEPTED_FORMATS = ["png", "jpg"]
 RESIZE_FACTOR = 4 
 DISTANCE = 20.5 # valor encontrado empiricamente
@@ -136,13 +136,7 @@ def separe_words(img):
     diff = cv2.bitwise_and(vert_opening, horz_opening)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 5))
-    mask = cv2.morphologyEx(diff, cv2.MORPH_CLOSE, kernel)
-    #cv2.imshow("diff", mask)
-    #cv2.waitKey(0)
-
-    #mask = diff
-
-    return mask
+    return cv2.morphologyEx(diff, cv2.MORPH_CLOSE, kernel)
 
 def count_words(img_paths, should_show=False):
     """
@@ -160,13 +154,17 @@ def count_words(img_paths, should_show=False):
         (cx, cy, cw, ch), crop = centralize_letter(rotated)
 
         mask = separe_words(crop)
-
-        # conta os contornos e desenha os retangulos na imagem de saida
+        
+        # refaz a rotacao na imagem com o tamanho original
         (h, w) = img.shape[:2]
         M = cv2.getRotationMatrix2D((w//2, h//2), angle, 1.0)
         out = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # imagem de debug
         mask_out = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        
+        # conta os contornos e desenha os retangulos na imagem de saida
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in contours:
             size = cv2.contourArea(cnt)
             if size > MIN_WORD_SIZE:
@@ -183,13 +181,10 @@ def count_words(img_paths, should_show=False):
 
         print(f"{img_name.split('_')[0]} {len(contours)} palavras encontradas")
 
-        # (h, w) = img.shape[:2]
-        # #mask_out = cv2.cvtColor(mask_out, cv2.COLOR_GRAY2BGR)
-        # mask_out = cv2.resize(mask_out, (w, h), interpolation=cv2.INTER_AREA)
-
-        # if should_show:
-        #     cv2.imshow("img", np.concatenate([out, mask_out], axis=1))
-        #     cv2.waitKey(0)
+        # imagem de debug
+        if should_show:
+            cv2.imshow("img", mask_out)
+            cv2.waitKey(0)
         
         cv2.imwrite(f"output_{img_name}", out)
 
