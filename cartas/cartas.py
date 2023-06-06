@@ -5,11 +5,11 @@ from sys import argv
 from os import listdir
 from scipy.signal import find_peaks
 
-DIR_NAME = "."
+DIR_NAME = "vl"
 ACCEPTED_FORMATS = ["png", "jpg"]
 RESIZE_FACTOR = 4 
 DISTANCE = 20.5 # valor encontrado empiricamente
-HEIGHT_FACTOR = 7
+HEIGHT_FACTOR = 6
 MIN_WORD_SIZE = 15
 
 def correct_skew(img, delta=1, limit=5):
@@ -56,7 +56,7 @@ def centralize_letter(img):
     Corta a imagem para centralizar a escrita\n
     """
     # unifica as linhas
-    ver_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 10))
+    ver_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 20))
     dilatated = cv2.dilate(img, ver_kernel, iterations=5)
 
     # encontra o maior contorno
